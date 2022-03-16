@@ -1,4 +1,9 @@
 import postApi from './api/postApi'
+import dayjs from 'dayjs'
+import relativeTime from 'dayjs/plugin/relativeTime'
+
+// extend use fromNow function
+dayjs.extend(relativeTime)
 import {
 	setTextContent
 } from './utils'
@@ -6,28 +11,35 @@ import {
 function createPostElement(post) {
 	if (!post) return
 
-	try {
-		// find and clone template
-		const postTemplate = document.getElementById('postTemplate')
-		if (!postTemplate) return
+	const postTemplate = document.getElementById('postTemplate')
+	if (!postTemplate) return
 
-		const liElement = postTemplate.content.firstElementChild.cloneNode(true)
-		if (!liElement) return
+	const liElement = postTemplate.content.firstElementChild.cloneNode(true)
+	if (!liElement) return
 
-		// update title, description, author, thumbnail
+	// update title, description, author, thumbnail
 
-		setTextContent(liElement, '[data-id="title"]', post.title)
-		setTextContent(liElement, '[data-id="description"]', post.description)
-		setTextContent(liElement, '[data-id="author"]', post.author)
+	setTextContent(liElement, '[data-id="title"]', post.title)
+	setTextContent(liElement, '[data-id="description"]', post.description)
+	setTextContent(liElement, '[data-id="author"]', post.author)
 
-		const thumbnailElement = liElement.querySelector('[data-id="thumbnail"]')
-		if (thumbnailElement) thumbnailElement.setAttribute('src', post.imageUrl)
-		// attach event
+	// calculate timespan
 
-		return liElement
-	} catch (error) {
-		console.log('failed to create post item', error)
+	// console.log('timespan', dayjs(post.updatedAt).fromNow())
+	setTextContent(liElement, '[data-id="timeSpan"]', `- ${dayjs(post.updatedAt).fromNow()}`)
+
+	const thumbnailElement = liElement.querySelector('[data-id="thumbnail"]')
+	if (thumbnailElement) {
+		thumbnailElement.src = post.imageUrl
+
+		thumbnailElement.addEventListener('error', () => {
+			console.log('load image error')
+			thumbnailElement.src = 'http://via.placeholder.com/640x360'
+		})
 	}
+	// attach event
+
+	return liElement
 
 
 }
