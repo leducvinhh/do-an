@@ -37,11 +37,9 @@ function createPostElement(post) {
 			thumbnailElement.src = 'http://via.placeholder.com/640x360'
 		})
 	}
-	// attach event
+	// attach event  
 
 	return liElement
-
-
 }
 
 function renderPostList(postList) {
