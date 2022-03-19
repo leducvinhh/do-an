@@ -37,13 +37,12 @@ function createPostElement(post) {
 			thumbnailElement.src = 'http://via.placeholder.com/640x360'
 		})
 	}
-	// attach event  
+	// attach event
 
 	return liElement
 }
 
 function renderPostList(postList) {
-	console.log(postList)
 	if (!Array.isArray(postList) || postList.length === 0) return
 
 	const ulElement = document.querySelector('#postList')
@@ -55,12 +54,62 @@ function renderPostList(postList) {
 	})
 }
 
+function handleFilterChange(filterName, filterValue) {
+	const url = new URL(window.location)
+	url.searchParams.set(filterName, filterValue)
+	history.pushState({}, '', url)
+
+	// fetch API
+	// re-render post list
+}
+
+function handlePrevClick(e) {
+	console.log('prev click')
+	e.preventDefault()
+}
+
+function handleNextClick(e) {
+	console.log('next click')
+	e.preventDefault()
+}
+
+function initPagination() {
+	const ulElement = document.getElementById('pagination')
+	if (!ulElement) return
+
+	const prevElement = ulElement.firstElementChild.firstElementChild
+	const nextElement = ulElement.lastElementChild.lastElementChild
+
+	// bind click event for prev link
+	if (prevElement) {
+		prevElement.addEventListener('click', handlePrevClick)
+	}
+
+	// bind click event for next link
+	if (nextElement) {
+		nextElement.addEventListener('click', handleNextClick)
+	}
+}
+
+function initURL() {
+	const url = new URL(window.location)
+
+	if (!url.searchParams.get('_page')) {
+		url.searchParams.set('_page', 1)
+	}
+	if (!url.searchParams.get('_limit')) {
+		url.searchParams.set('_limit', 6)
+	}
+
+	history.pushState({}, '', url)
+}
+
 (async () => {
 	try {
-		const queryParams = {
-			_page: 1,
-			_limit: 6,
-		}
+		initPagination()
+		initURL()
+
+		const queryParams = new URLSearchParams(window.location.search)
 		const {
 			data,
 			pagination
