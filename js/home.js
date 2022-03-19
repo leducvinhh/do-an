@@ -5,6 +5,7 @@ import relativeTime from 'dayjs/plugin/relativeTime'
 // extend use fromNow function
 dayjs.extend(relativeTime)
 import {
+	getUlPagination,
 	setTextContent
 } from './utils'
 
@@ -48,33 +49,87 @@ function renderPostList(postList) {
 	const ulElement = document.querySelector('#postList')
 	if (!ulElement) return
 
+	ulElement.textContent = ''
+
 	postList.forEach((post) => {
 		const liElement = createPostElement(post)
 		ulElement.appendChild(liElement)
 	})
 }
 
-function handleFilterChange(filterName, filterValue) {
+async function handleFilterChange(filterName, filterValue) {
 	const url = new URL(window.location)
 	url.searchParams.set(filterName, filterValue)
 	history.pushState({}, '', url)
 
 	// fetch API
+	const {
+		data,
+		pagination
+	} = await postApi.getAll(url.searchParams)
+	renderPostList(data)
+	renderPagination(pagination)
 	// re-render post list
 }
 
+function renderPagination(pagination) {
+	console.log(pagination)
+	const ulElement = getUlPagination()
+	if (!ulElement || !pagination) return
+
+	const {
+		_page,
+		_limit,
+		_totalRows
+	} = pagination
+
+	const totalPages = Math.ceil(_totalRows / _limit)
+
+	ulElement.dataset.page = _page
+	ulElement.dataset.totalPages = totalPages
+
+	if (_page <= 1) {
+		ulElement.firstElementChild.classList.add('disabled')
+	} else {
+		ulElement.firstElementChild.classList.remove('disabled')
+	}
+
+	if (_page >= totalPages) {
+		ulElement.lastElementChild.classList.add('disabled')
+	} else {
+		ulElement.lastElementChild.classList.remove('disabled')
+	}
+}
+
 function handlePrevClick(e) {
-	console.log('prev click')
 	e.preventDefault()
+	const ulElement = getUlPagination()
+
+	console.log('prev click')
+	const page = Number.parseInt(ulElement.dataset.page) || 1
+	if (page <= 1) return
+	if (!ulElement) return
+
+	handleFilterChange('_page', page - 1)
 }
 
 function handleNextClick(e) {
-	console.log('next click')
 	e.preventDefault()
+
+	const ulElement = getUlPagination()
+	if (!ulElement) return
+
+	const page = Number.parseInt(ulElement.dataset.page) || 1
+	const totalPages = Number.parseInt(ulElement.dataset.totalPages) || 1
+	console.log(page, totalPages)
+	if (page >= totalPages) return
+	console.log('next click')
+
+	handleFilterChange('_page', page + 1)
 }
 
 function initPagination() {
-	const ulElement = document.getElementById('pagination')
+	const ulElement = getUlPagination()
 	if (!ulElement) return
 
 	const prevElement = ulElement.firstElementChild.firstElementChild
@@ -115,6 +170,7 @@ function initURL() {
 			pagination
 		} = await postApi.getAll(queryParams)
 		renderPostList(data)
+		renderPagination(pagination)
 	} catch (error) {
 		console.log('get all failed', error)
 	}
