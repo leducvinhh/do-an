@@ -8,6 +8,7 @@ import {
 	getUlPagination,
 	setTextContent
 } from './utils'
+import debounce from 'lodash.debounce'
 
 function createPostElement(post) {
 	if (!post) return
@@ -44,7 +45,7 @@ function createPostElement(post) {
 }
 
 function renderPostList(postList) {
-	if (!Array.isArray(postList) || postList.length === 0) return
+	if (!Array.isArray(postList)) return
 
 	const ulElement = document.querySelector('#postList')
 	if (!ulElement) return
@@ -60,6 +61,11 @@ function renderPostList(postList) {
 async function handleFilterChange(filterName, filterValue) {
 	const url = new URL(window.location)
 	url.searchParams.set(filterName, filterValue)
+
+	if (filterName === 'title_like') {
+		url.searchParams.set('_page', 1)
+	}
+
 	history.pushState({}, '', url)
 
 	// fetch API
@@ -121,7 +127,7 @@ function handleNextClick(e) {
 
 	const page = Number.parseInt(ulElement.dataset.page) || 1
 	const totalPages = Number.parseInt(ulElement.dataset.totalPages) || 1
-	console.log(page, totalPages)
+
 	if (page >= totalPages) return
 	console.log('next click')
 
@@ -146,25 +152,38 @@ function initPagination() {
 	}
 }
 
-function initURL() {
-	const url = new URL(window.location)
+function initSearch() {
+	const inputSearch = document.getElementById('searchInput')
+	if (!initSearch) return
 
-	if (!url.searchParams.get('_page')) {
-		url.searchParams.set('_page', 1)
-	}
-	if (!url.searchParams.get('_limit')) {
-		url.searchParams.set('_limit', 6)
+	const queryParams = new URLSearchParams(window.location.search)
+	if (queryParams.get('title_like')) {
+		inputSearch.value = queryParams.get('title_like')
 	}
 
-	history.pushState({}, '', url)
+	const debounceSearch = debounce((event) => handleFilterChange('title_like', event.target.value), 500)
+
+	inputSearch.addEventListener('input', debounceSearch)
 }
 
 (async () => {
 	try {
-		initPagination()
-		initURL()
+		const url = new URL(window.location)
 
-		const queryParams = new URLSearchParams(window.location.search)
+		if (!url.searchParams.get('_page')) {
+			url.searchParams.set('_page', 1)
+		}
+		if (!url.searchParams.get('_limit')) {
+			url.searchParams.set('_limit', 6)
+		}
+
+		history.pushState({}, '', url)
+		const queryParams = url.searchParams
+
+		initPagination(queryParams)
+		initSearch(queryParams)
+
+		// const queryParams = new URLSearchParams(window.location.search)
 		const {
 			data,
 			pagination
